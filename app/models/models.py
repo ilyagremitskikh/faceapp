@@ -17,10 +17,10 @@ class PornstarModel(BaseModel):
     id: int = Field(description="Model Database ID", example="1")
     name: str = Field(description="Model Name", example="Mia Malkova")
     image: bytes = Field(description="Model Image bytes")
-    distance: float = Field(
+    distance: Optional[float] = Field(
         description="Distance to target image", example="0.29124142"
     )
-    similarity: float = Field(description="Similarity percentage", example=77)
+    similarity: Optional[float] = Field(description="Similarity percentage", example=77)
 
     class Config:
         orm_mode = True
