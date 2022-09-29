@@ -29,7 +29,6 @@ async def verify_key(x_key: str = Header()):
     return x_key
 
 
-# app = FastAPI(dependencies=[Depends(verify_key)])
 app = FastAPI()
 
 models.Base.metadata.create_all(bind=engine)
