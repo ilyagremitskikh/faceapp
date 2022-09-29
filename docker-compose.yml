@@ -1,5 +1,5 @@
 # docker-compose.yml
-version: '2'
+version: "3"
 
 services:
   app:
@@ -10,9 +10,6 @@ services:
       - postgres
     depends_on:
       - db
-    volumes:
-      - ./data:/faceapp/data
-      - ./Faiss.index:/faceapp/Faiss.index
   db:
     image: postgres:latest
     networks:
@@ -21,11 +18,11 @@ services:
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_USER=mindxaker
-      - POSTGRES_PASSWORD=Himik2022
-      - POSTGRES_DB=faceapp
+      - POSTGRES_USER="${DB_USER}
+      - POSTGRES_PASSWORD="${DB_PASSWORD}"
+      - POSTGRES_DB="${DB_DATABASE}"
     volumes:
-      - ./postgres-data:/var/lib/postgresql/data
+      - pg_data:/var/lib/postgresql/data
   adminer:
     image: adminer
     networks:

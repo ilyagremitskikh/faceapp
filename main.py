@@ -1,16 +1,16 @@
 import base64
 from typing import List
 
+from fastapi import Depends, FastAPI, Header, HTTPException, UploadFile, status
 from PIL import UnidentifiedImageError
-from fastapi import FastAPI, UploadFile, HTTPException, status, Header, Depends
 from sqlalchemy.orm import Session
 
 from app.classes.face_processor import FaceProcessor
 from app.classes.index import Faiss
-from app.models import models
-from app.models import crud
-from app.models.database import SessionLocal, engine
+from app.models import crud, models
+from app.models.database import SessionLocal, config, engine
 from app.utils import exceptions
+from app.utils.config import load_config
 
 SIMILARITY_THRESHOLD = 60
 
@@ -24,7 +24,7 @@ def get_db():
 
 
 async def verify_key(x_key: str = Header()):
-    if x_key != "62fqNF9mLcNcWVpHGiw28UEsWcHFJLnQ79Nbfmax4upxF2":
+    if x_key != config.api.secret_api_key:
         raise HTTPException(status_code=400, detail="X-Key header invalid")
     return x_key
 
@@ -50,15 +50,21 @@ def read_root():
     return {"Hello": "World"}
 
 
-@app.post("/get_similar_pornstars/", response_model=List[models.PornstarModel],
-          summary="Get similar pornstars", response_description="List of Similar Pornstars",
-          responses={
-              404: {"description": "Suitable results not found"},
-              406: {"description": "Number of faces on given image is more than 1"},
-              415: {"description": "Cannot identify image file"},
-              422: {"description": "Can't find faces on image"}
-          })
-async def get_similar_pornstars(file: UploadFile, number_of_neighbors: int = 10, db: Session = Depends(get_db)):
+@app.post(
+    "/get_similar_pornstars/",
+    response_model=List[models.PornstarModel],
+    summary="Get similar pornstars",
+    response_description="List of Similar Pornstars",
+    responses={
+        404: {"description": "Suitable results not found"},
+        406: {"description": "Number of faces on given image is more than 1"},
+        415: {"description": "Cannot identify image file"},
+        422: {"description": "Can't find faces on image"},
+    },
+)
+async def get_similar_pornstars(
+    file: UploadFile, number_of_neighbors: int = 10, db: Session = Depends(get_db)
+):
     """
     Get similar pornstars for uploaded human face photo
      - **file**: human face photo
@@ -68,19 +74,25 @@ async def get_similar_pornstars(file: UploadFile, number_of_neighbors: int = 10,
     try:
         encoding = fp.get_encoding(image_file)
     except UnidentifiedImageError as error:
-        raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-                            detail="Cannot identify image file",
-                            headers={"X-Error": f"{error}"})
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="Cannot identify image file",
+            headers={"X-Error": f"{error}"},
+        )
 
     except exceptions.WrongNumberOfFacesError as error:
-        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE,
-                            detail="Wrong number of faces on photo",
-                            headers={"X-Error": f"{error}"})
+        raise HTTPException(
+            status_code=status.HTTP_406_NOT_ACCEPTABLE,
+            detail="Wrong number of faces on photo",
+            headers={"X-Error": f"{error}"},
+        )
 
     except exceptions.NoFacesFoundError as error:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                            detail="Can't find faces of photo",
-                            headers={"X-Error": f"{error}"})
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Can't find faces of photo",
+            headers={"X-Error": f"{error}"},
+        )
 
     neighbors, distances = faiss.get_neighbors(vector=encoding, n=number_of_neighbors)
     db_pornstars = crud.get_pornstars_by_ids(db, neighbors)
@@ -89,9 +101,12 @@ async def get_similar_pornstars(file: UploadFile, number_of_neighbors: int = 10,
         model.image = base64.b64encode(model.image)
         model.distance = distances[index]
         model.similarity = round((1 - distances[index]) * 100)
-    result = [star for star in pydantic_pornstars if star.similarity > SIMILARITY_THRESHOLD]
+    result = [
+        star for star in pydantic_pornstars if star.similarity > SIMILARITY_THRESHOLD
+    ]
     if not result:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="Suitable results not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Suitable results not found"
+        )
     else:
         return result
