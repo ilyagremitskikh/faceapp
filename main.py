@@ -1,4 +1,5 @@
 import base64
+from pathlib import Path
 from typing import List
 
 from fastapi import Depends, FastAPI, Header, HTTPException, UploadFile, status
@@ -10,7 +11,6 @@ from app.classes.index import Faiss
 from app.models import crud, models
 from app.models.database import SessionLocal, config, engine
 from app.utils import exceptions
-from app.utils.config import load_config
 
 SIMILARITY_THRESHOLD = 60
 
@@ -39,15 +39,13 @@ models.Base.metadata.create_all(bind=engine)
 async def startup_event():
     global faiss
     faiss = Faiss("euclidean", 128)
+    if not Path("./Faiss.index").is_file():
+        faiss.create()
+        faiss.save()
     faiss.load()
 
     global fp
     fp = FaceProcessor()
-
-
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
 
 
 @app.post(

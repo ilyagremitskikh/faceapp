@@ -31,7 +31,7 @@ def load_config():
         db=DBConfig(
             db_host=environ.get("DB_HOST"),
             db_user=environ.get("DB_USER"),
-            db_pass=environ.get("DB_PASS"),
+            db_pass=environ.get("DB_PASSWORD"),
             db_database=environ.get("DB_DATABASE"),
         ),
         api=ApiConfig(secret_api_key=environ.get("API_SECRET_KEY")),

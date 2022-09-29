@@ -1,4 +1,4 @@
-from typing import Union
+from typing import List
 
 import face_recognition
 
@@ -10,7 +10,7 @@ class FaceProcessor:
     @staticmethod
     def get_encoding(
         file, model: str = "large", number_of_times_to_upsample: int = 1
-    ) -> Union[list, None]:
+    ) -> List:
         """Returns 128-vector embedding of image file
 
         Args:
@@ -42,7 +42,7 @@ class FaceProcessor:
         face_encoding = face_recognition.face_encodings(
             image, known_face_locations=face_locations, model=model
         )
-        return face_encoding[0]
+        return face_encoding[0]  # type: ignore
 
 
 if __name__ == "__main__":
