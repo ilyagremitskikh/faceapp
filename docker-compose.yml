@@ -1,0 +1,40 @@
+# docker-compose.yml
+version: '2'
+
+services:
+  app:
+    build: .
+    ports:
+      - "80:80"
+    networks:
+      - postgres
+    depends_on:
+      - db
+    volumes:
+      - ./data:/faceapp/data
+      - ./Faiss.index:/faceapp/Faiss.index
+  db:
+    image: postgres:latest
+    networks:
+      - postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=mindxaker
+      - POSTGRES_PASSWORD=Himik2022
+      - POSTGRES_DB=faceapp
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+  adminer:
+    image: adminer
+    networks:
+      - postgres
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+networks:
+  postgres:
+    driver: bridge

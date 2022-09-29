@@ -1,0 +1,11 @@
+FROM animcogn/face_recognition:cpu-latest
+
+WORKDIR /faceapp
+
+COPY ./requirements.txt /faceapp/requirements.txt
+
+RUN pip install --no-cache-dir --upgrade -r /faceapp/requirements.txt
+
+COPY ./app /faceapp/app
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
