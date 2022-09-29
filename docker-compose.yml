@@ -1,6 +1,14 @@
 # docker-compose.yml
 version: "3"
 
+networks:
+  postgres:
+    driver: bridge
+
+volumes:
+  pg_data:
+
+
 services:
   app:
     build: .
@@ -18,9 +26,9 @@ services:
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_USER="${DB_USER}
-      - POSTGRES_PASSWORD="${DB_PASSWORD}"
-      - POSTGRES_DB="${DB_DATABASE}"
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_DATABASE}
     volumes:
       - pg_data:/var/lib/postgresql/data
   adminer:
@@ -32,6 +40,3 @@ services:
       - "8080:8080"
     depends_on:
       - db
-networks:
-  postgres:
-    driver: bridge
