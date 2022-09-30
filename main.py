@@ -29,7 +29,7 @@ async def verify_key(x_key: str = Header()):
     return x_key
 
 
-app = FastAPI()
+app = FastAPI(dependencies=[Depends(verify_key)])
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -47,9 +47,26 @@ async def startup_event():
     fp = FaceProcessor()
 
 
+@app.get(
+    "/get_pornstar/{id}",
+    response_model=models.PornstarModelFull,
+    summary="Get pornstar by id",
+)
+async def get_pornstar(id: int, db: Session = Depends(get_db)):
+    pornstar_orm = crud.get_pornstar(db, id)
+    if not pornstar_orm:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Model with given ID not found",
+        )
+    pornstar_model = models.PornstarModelFull.from_orm(pornstar_orm)
+    pornstar_model.image = base64.b64encode(pornstar_model.image)
+    return pornstar_model
+
+
 @app.post(
     "/get_similar_pornstars/",
-    response_model=List[models.PornstarModel],
+    response_model=List[models.PornstarModelTwins],
     summary="Get similar pornstars",
     response_description="List of Similar Pornstars",
     responses={
@@ -93,9 +110,10 @@ async def get_similar_pornstars(
 
     neighbors, distances = faiss.get_neighbors(vector=encoding, n=number_of_neighbors)
     db_pornstars = crud.get_pornstars_by_ids(db, neighbors)
-    pydantic_pornstars = [models.PornstarModel.from_orm(item) for item in db_pornstars]
+    pydantic_pornstars = [
+        models.PornstarModelTwins.from_orm(item) for item in db_pornstars
+    ]
     for index, model in enumerate(pydantic_pornstars):
-        model.image = base64.b64encode(model.image)
         model.distance = distances[index]
         model.similarity = round((1 - distances[index]) * 100)
     result = [

@@ -7,11 +7,20 @@ from . import models
 
 
 def get_pornstar(db: Session, pornstar_id: int):
-    return db.query(models.PornstarOrm).filter(models.PornstarOrm.id == pornstar_id).first()
+    return (
+        db.query(models.PornstarOrm)
+        .filter(models.PornstarOrm.id == pornstar_id)
+        .first()
+    )
 
 
 def get_pornstars_by_ids(db: Session, pornstars_ids: Iterable):
-    return db.query(models.PornstarOrm).filter(models.PornstarOrm.id == any_(pornstars_ids)).all()
+    return (
+        db.query()
+        .with_entities(models.PornstarOrm.id)
+        .filter(models.PornstarOrm.id == any_(pornstars_ids))
+        .all()
+    )
 
 
 def get_pornstars(db: Session, skip: int = 0, limit: int = 100):
